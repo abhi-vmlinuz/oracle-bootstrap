@@ -196,9 +196,14 @@ install_instantclient() {
     unzip -q -o "$sqlplus_zip" -d "$INSTALL_DIR"
     log_ok "Oracle Instant Client extracted"
 
-    # Verify sqlplus binary exists
+    # Ensure binaries are executable (ZIP extraction may not preserve perms)
     local ic_dir
     ic_dir="$(instantclient_dir)"
+    if [[ -d "$ic_dir" ]]; then
+        chmod +x "${ic_dir}"/* 2>/dev/null || true
+    fi
+
+    # Verify sqlplus binary exists
     if [[ -z "$ic_dir" || ! -x "${ic_dir}/sqlplus" ]]; then
         log_err "SQL*Plus binary not found after extraction. Something went wrong."
         return 1
