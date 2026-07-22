@@ -9,6 +9,8 @@ ORACLE_SHELL_SOURCED=1
 __oracle_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
 source "$__oracle_lib_dir/utils.sh"
+# shellcheck source=sqlplus.sh
+source "$__oracle_lib_dir/sqlplus.sh"
 
 readonly SCRIPTS_DIR="${__oracle_lib_dir}/../scripts"
 
@@ -84,7 +86,7 @@ ensure_fish_path() {
 # Setup Oracle environment variables (LD_LIBRARY_PATH, ORACLE_HOME)
 setup_oracle_env() {
     local ic_dir
-    ic_dir="$("${__oracle_lib_dir}/sqlplus.sh" --source-only && instantclient_dir)"
+    ic_dir="$(instantclient_dir)"
 
     if [[ -z "$ic_dir" || ! -d "$ic_dir" ]]; then
         log_warn "Instant Client directory not found, skipping environment setup"

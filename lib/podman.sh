@@ -83,14 +83,22 @@ wait_for_oracle() {
     log_info "Waiting for Oracle to be ready..."
     local attempts=0
     local max_attempts=60
+
     while [[ $attempts -lt $max_attempts ]]; do
-        if podman exec "$CONTAINER_NAME" bash -c "echo 'SELECT 1 FROM DUAL;' | sqlplus -s / as sysdba" 2>/dev/null | grep -q '1'; then
-            log_ok "Oracle is ready"
+        if podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba <<'EOF' 2>/dev/null
+SET PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF ECHO OFF
+SELECT COUNT(*) FROM v$pdbs WHERE name='FREEPDB1' AND open_mode='READ WRITE';
+EXIT;
+EOF
+        then
+            log_ok "Oracle is ready (PDB FREEPDB1 is open)"
             return 0
         fi
         ((attempts++))
         sleep 2
+        printf "\r[>] Waiting... (%d/%d)" "$attempts" "$max_attempts"
     done
+    printf "\n"
     log_err "Oracle failed to become ready after ${max_attempts} attempts"
     return 1
 }
