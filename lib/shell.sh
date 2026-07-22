@@ -106,6 +106,7 @@ setup_oracle_env() {
     cat > "$env_bash" <<EOF
 # Oracle Instant Client environment
 export ORACLE_HOME="${ic_dir}"
+export PATH="${ic_dir}:\${PATH}"
 export LD_LIBRARY_PATH="${ic_dir}:\${LD_LIBRARY_PATH:-}"
 EOF
 
@@ -125,6 +126,7 @@ EOF
 # Oracle Instant Client environment
 set -gx ORACLE_HOME ${ic_dir}
 set -gx LD_LIBRARY_PATH ${ic_dir} \$LD_LIBRARY_PATH
+fish_add_path ${ic_dir}
 EOF
     log_ok "Oracle environment configured for Fish"
 }
