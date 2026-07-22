@@ -21,8 +21,13 @@ readonly ORACLE_IC_VERSION="${ORACLE_IC_VERSION:-23.4.0.0.0}"
 # Direct download URL (Oracle may require authentication; this is a best-effort attempt)
 ic_download_url() {
     local filename="$1"
-    # Try common Oracle CDN URL patterns
-    echo "https://download.oracle.com/otn_software/linux/instantclient/$(echo "$ORACLE_IC_VERSION" | tr -d '.')/${filename}"
+    # Oracle URL ID = (major*10 + minor) * 10000, e.g. 23.4.0.0.0 -> 234*10000 = 2340000
+    local major minor url_id
+    major="${ORACLE_IC_VERSION%%.*}"
+    minor="${ORACLE_IC_VERSION#${major}.}"
+    minor="${minor%%.*}"
+    url_id=$(( (major * 10 + minor) * 10000 ))
+    echo "https://download.oracle.com/otn_software/linux/instantclient/${url_id}/${filename}"
 }
 
 # Expected filenames
