@@ -3,6 +3,9 @@
 
 set -euo pipefail
 
+[[ -n "${ORACLE_DISTRO_SOURCED:-}" ]] && return 0
+ORACLE_DISTRO_SOURCED=1
+
 # Detect distribution ID from /etc/os-release
 # Returns: fedora, ubuntu, debian, linuxmint, kali, arch, opensuse, unknown
 detect_distro() {

@@ -3,6 +3,9 @@
 
 set -euo pipefail
 
+[[ -n "${ORACLE_UTILS_SOURCED:-}" ]] && return 0
+ORACLE_UTILS_SOURCED=1
+
 # Colors
 readonly C_GREEN='\033[0;32m'
 readonly C_RED='\033[0;31m'

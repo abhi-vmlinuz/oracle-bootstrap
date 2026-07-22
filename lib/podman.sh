@@ -3,6 +3,9 @@
 
 set -euo pipefail
 
+[[ -n "${ORACLE_PODMAN_SOURCED:-}" ]] && return 0
+ORACLE_PODMAN_SOURCED=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
 source "$SCRIPT_DIR/utils.sh"
