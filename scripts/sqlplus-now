@@ -7,13 +7,57 @@ readonly CONNECT_STRING="mca/mca@localhost:1521/FREEPDB1"
 
 # --- Oracle environment ---
 _oracle_bin=""
+
+_detect_distro_for_hint() {
+    if [[ -r /etc/os-release ]]; then
+        # shellcheck source=/dev/null
+        source /etc/os-release
+        echo "${ID:-unknown}"
+    else
+        echo "unknown"
+    fi
+}
+
+_check_ic_deps() {
+    local bin="$1"
+    local missing
+    missing="$(ldd "$bin" 2>/dev/null | grep 'not found' | awk '{print $1}' || true)"
+    if [[ -n "$missing" ]]; then
+        echo "[✗] Missing shared libraries for sqlplus:"
+        printf '    %s\n' "$missing"
+        if echo "$missing" | grep -q 'libaio'; then
+            local distro
+            distro="$(_detect_distro_for_hint)"
+            case "$distro" in
+                debian|ubuntu|linuxmint|kali)
+                    echo "[>] Fix: sudo apt-get install -y libaio1"
+                    ;;
+                fedora)
+                    echo "[>] Fix: sudo dnf install -y libaio"
+                    ;;
+                arch)
+                    echo "[>] Fix: sudo pacman -S libaio"
+                    ;;
+                opensuse)
+                    echo "[>] Fix: sudo zypper install -y libaio1"
+                    ;;
+                *)
+                    echo "[>] Fix: Install the 'libaio' package for your distro"
+                    ;;
+            esac
+        fi
+        echo "[>] Or re-run: ./install.sh"
+        exit 1
+    fi
+}
+
 _setup_oracle_env() {
     local install_dir="${HOME}/.local/oracle"
     local ic_dir=""
 
     # Already on PATH?
-    if has_cmd sqlplus 2>/dev/null; then
-        _oracle_bin="sqlplus"
+    if command -v sqlplus &>/dev/null; then
+        _oracle_bin="$(command -v sqlplus)"
         return 0
     fi
 
@@ -32,6 +76,7 @@ _setup_oracle_env() {
 }
 
 _setup_oracle_env
+_check_ic_deps "$_oracle_bin"
 
 # Hand over directly to rlwrap + sqlplus, no container checks, no waiting
 exec rlwrap "${_oracle_bin:-sqlplus}" "$CONNECT_STRING"
