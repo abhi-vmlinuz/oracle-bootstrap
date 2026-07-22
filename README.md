@@ -45,7 +45,7 @@ That's it. Oracle container starts, waits until ready, and drops you into SQL*Pl
 
 Due to Oracle licensing, automatic download is not always possible.
 
-1. Download from [Oracle Instant Client Downloads](https://www.oracle.com/database/technologies/instant-client/downloads.html)
+1. Download from [Oracle Instant Client Downloads](https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html)
 2. Place these files in `~/.cache/oracle/`:
    - `instantclient-basic-linux.x64-<version>.zip`
    - `instantclient-sqlplus-linux.x64-<version>.zip`
