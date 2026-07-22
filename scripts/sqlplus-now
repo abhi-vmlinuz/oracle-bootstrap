@@ -18,37 +18,68 @@ _detect_distro_for_hint() {
     fi
 }
 
+# Check for missing shared libraries and auto-fix compat symlinks
 _check_ic_deps() {
     local bin="$1"
     local missing
     missing="$(ldd "$bin" 2>/dev/null | grep 'not found' | awk '{print $1}' || true)"
-    if [[ -n "$missing" ]]; then
-        echo "[✗] Missing shared libraries for sqlplus:"
-        printf '    %s\n' "$missing"
-        if echo "$missing" | grep -q 'libaio'; then
-            local distro
-            distro="$(_detect_distro_for_hint)"
-            case "$distro" in
-                debian|ubuntu|linuxmint|kali)
-                    echo "[>] Fix: sudo apt-get install -y libaio1"
-                    ;;
-                fedora)
-                    echo "[>] Fix: sudo dnf install -y libaio"
-                    ;;
-                arch)
-                    echo "[>] Fix: sudo pacman -S libaio"
-                    ;;
-                opensuse)
-                    echo "[>] Fix: sudo zypper install -y libaio1"
-                    ;;
-                *)
-                    echo "[>] Fix: Install the 'libaio' package for your distro"
-                    ;;
-            esac
-        fi
-        echo "[>] Or re-run: ./install.sh"
-        exit 1
+    if [[ -z "$missing" ]]; then
+        return 0
     fi
+
+    # Try compat symlinks for known transitions
+    local libdir=""
+    if [[ -d /usr/lib/x86_64-linux-gnu ]]; then
+        libdir="/usr/lib/x86_64-linux-gnu"
+    elif [[ -d /usr/lib64 ]]; then
+        libdir="/usr/lib64"
+    elif [[ -d /lib64 ]]; then
+        libdir="/lib64"
+    fi
+
+    # libaio.so.1 -> libaio.so.1t64 (Debian trixie transition)
+    if echo "$missing" | grep -q 'libaio.so.1' && [[ -n "$libdir" ]]; then
+        if [[ -f "${libdir}/libaio.so.1t64" && ! -f "${libdir}/libaio.so.1" ]]; then
+            echo "[>] Creating libaio compat symlink for Debian trixie..."
+            sudo ln -s "${libdir}/libaio.so.1t64" "${libdir}/libaio.so.1" 2>/dev/null && {
+                echo "[✓] libaio compat symlink created"
+                return 0
+            }
+        fi
+    fi
+
+    # Re-test after symlink fix
+    missing="$(ldd "$bin" 2>/dev/null | grep 'not found' | awk '{print $1}' || true)"
+    if [[ -z "$missing" ]]; then
+        return 0
+    fi
+
+    echo "[✗] Missing shared libraries for sqlplus:"
+    printf '    %s\n' "$missing"
+    if echo "$missing" | grep -q 'libaio'; then
+        local distro
+        distro="$(_detect_distro_for_hint)"
+        case "$distro" in
+            debian|ubuntu|linuxmint|kali)
+                echo "[>] Fix: sudo apt-get install -y libaio1"
+                echo "[>]   On Debian Trixie also try: sudo apt-get install -y libaio1t64"
+                ;;
+            fedora)
+                echo "[>] Fix: sudo dnf install -y libaio"
+                ;;
+            arch)
+                echo "[>] Fix: sudo pacman -S libaio"
+                ;;
+            opensuse)
+                echo "[>] Fix: sudo zypper install -y libaio1"
+                ;;
+            *)
+                echo "[>] Fix: Install the 'libaio' package for your distro"
+                ;;
+        esac
+    fi
+    echo "[>] Or re-run: ./install.sh"
+    exit 1
 }
 
 _setup_oracle_env() {
