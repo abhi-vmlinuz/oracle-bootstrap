@@ -2,6 +2,8 @@
 # install.sh — Oracle Database Development Bootstrapper
 
 set -euo pipefail
+# DEBUG: uncomment the next line to see every command executed
+#set -x
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
