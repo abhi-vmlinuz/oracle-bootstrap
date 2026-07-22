@@ -5,7 +5,7 @@ A one-command installer that sets up a complete Oracle Database development envi
 ## Quick Start
 
 ```bash
-git clone <repo>
+git clone https://github.com/abhi-vmlinuz/oracle-bootstrap.git
 cd oracle-bootstrap
 ./install.sh
 ```
