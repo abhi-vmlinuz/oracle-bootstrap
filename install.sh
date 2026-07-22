@@ -31,7 +31,7 @@ fi
 
 # --- Install base dependencies ---
 log_info ""
-log_info "Installing base dependencies..."
+log_info "Installing base dependencies (sudo may be required)..."
 install_base_deps
 
 # --- Install Oracle Instant Client ---

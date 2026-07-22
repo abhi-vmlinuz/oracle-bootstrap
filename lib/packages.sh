@@ -77,8 +77,9 @@ install_pkg() {
                 sudo dnf install -y "$bin"
                 ;;
             apt)
-                sudo apt-get update -qq
-                sudo apt-get install -y -qq "$bin"
+                sudo -v || true
+                sudo apt-get update
+                sudo apt-get install -y "$bin"
                 ;;
             pacman)
                 sudo pacman -S --noconfirm "$bin"
