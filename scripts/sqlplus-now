@@ -5,5 +5,33 @@ set -euo pipefail
 
 readonly CONNECT_STRING="mca/mca@localhost:1521/FREEPDB1"
 
+# --- Oracle environment ---
+_oracle_bin=""
+_setup_oracle_env() {
+    local install_dir="${HOME}/.local/oracle"
+    local ic_dir=""
+
+    # Already on PATH?
+    if has_cmd sqlplus 2>/dev/null; then
+        _oracle_bin="sqlplus"
+        return 0
+    fi
+
+    # Find extracted instantclient dir
+    ic_dir="$(find "$install_dir" -maxdepth 1 -type d -name 'instantclient_*' 2>/dev/null | head -n1)"
+    if [[ -n "$ic_dir" && -x "${ic_dir}/sqlplus" ]]; then
+        export ORACLE_HOME="$ic_dir"
+        export LD_LIBRARY_PATH="${ic_dir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+        export PATH="${ic_dir}:${PATH}"
+        _oracle_bin="${ic_dir}/sqlplus"
+        return 0
+    fi
+
+    echo "[✗] sqlplus not found. Run ./install.sh first."
+    exit 1
+}
+
+_setup_oracle_env
+
 # Hand over directly to rlwrap + sqlplus, no container checks, no waiting
-exec rlwrap sqlplus "$CONNECT_STRING"
+exec rlwrap "${_oracle_bin:-sqlplus}" "$CONNECT_STRING"
