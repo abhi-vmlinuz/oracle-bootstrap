@@ -95,16 +95,22 @@ download_oracle_file() {
 print_manual_dl_instructions() {
     log_warn ""
     log_warn "Could not auto-download Oracle Instant Client."
-    log_warn "Please download the files manually:"
     log_warn ""
-    log_warn "  URL: ${ORACLE_DL_PAGE}"
+    log_warn "Download these two files from:"
+    log_warn "  ${ORACLE_DL_PAGE}"
     log_warn ""
     log_warn "Required files:"
     log_warn "  1. $(ic_base_filename)"
     log_warn "  2. $(ic_sqlplus_filename)"
     log_warn ""
-    log_warn "Place them in: ${CACHE_DIR}/"
-    log_warn "Then re-run:   ./install.sh"
+    log_warn "Then either:"
+    log_warn "  A) Put them in this folder: ${SCRIPT_DIR}/"
+    log_warn "     (just drop them next to install.sh and re-run)"
+    log_warn ""
+    log_warn "  B) Put them in: ${CACHE_DIR}/"
+    log_warn "     (the script will find them there)"
+    log_warn ""
+    log_warn "Then re-run: ./install.sh"
     log_warn ""
 }
 
@@ -151,12 +157,32 @@ install_instantclient() {
     if [[ -z "$base_zip" || -z "$sqlplus_zip" ]]; then
         log_info "Oracle Instant Client ZIPs not found in $CACHE_DIR, attempting download..."
         if ! download_instantclient; then
+            log_warn "Auto-download failed. Checking for ZIPs in install directory..."
+        fi
+
+        # Look for ZIPs in the repo directory (where install.sh lives)
+        # This is the "just drop them here" convenience path
+        local repo_base repo_sqlplus
+        repo_base="$(find "$SCRIPT_DIR" -maxdepth 1 -name 'instantclient-basic*.zip' 2>/dev/null | head -n1)"
+        repo_sqlplus="$(find "$SCRIPT_DIR" -maxdepth 1 -name 'instantclient-sqlplus*.zip' 2>/dev/null | head -n1)"
+
+        if [[ -n "$repo_base" && -n "$repo_sqlplus" ]]; then
+            log_ok "Found Oracle ZIPs in install directory"
+            log_info "Copying to $CACHE_DIR..."
+            cp -n "$repo_base" "$CACHE_DIR/"
+            cp -n "$repo_sqlplus" "$CACHE_DIR/"
+            log_ok "ZIPs copied"
+        fi
+
+        # Re-scan after download/copy
+        base_zip="$(find "$CACHE_DIR" -maxdepth 1 -name 'instantclient-basic*.zip' 2>/dev/null | head -n1)"
+        sqlplus_zip="$(find "$CACHE_DIR" -maxdepth 1 -name 'instantclient-sqlplus*.zip' 2>/dev/null | head -n1)"
+
+        # If still missing, show super simple instructions
+        if [[ -z "$base_zip" || -z "$sqlplus_zip" ]]; then
             print_manual_dl_instructions
             return 1
         fi
-        # Re-scan after download
-        base_zip="$(find "$CACHE_DIR" -maxdepth 1 -name 'instantclient-basic*.zip' 2>/dev/null | head -n1)"
-        sqlplus_zip="$(find "$CACHE_DIR" -maxdepth 1 -name 'instantclient-sqlplus*.zip' 2>/dev/null | head -n1)"
     fi
 
     if [[ -z "$base_zip" || -z "$sqlplus_zip" ]]; then
