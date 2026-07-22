@@ -57,6 +57,36 @@ pkg_map() {
     esac
 }
 
+# Check if a package is installed
+is_pkg_installed() {
+    local pkg="$1"
+    local pkg_manager="$2"
+    case "$pkg_manager" in
+        apt)
+            if dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "^install ok installed"; then
+                return 0
+            fi
+            # Handle libaio virtual package on trixie
+            if [[ "$pkg" == libaio1 ]] && dpkg-query -W -f='${Status}' libaio1t64 2>/dev/null | grep -q "^install ok installed"; then
+                return 0
+            fi
+            return 1
+            ;;
+        dnf|rpm)
+            rpm -q "$pkg" &>/dev/null
+            ;;
+        pacman)
+            pacman -Q "$pkg" &>/dev/null
+            ;;
+        zypper)
+            rpm -q "$pkg" &>/dev/null
+            ;;
+        *)
+            has_cmd "$pkg" 2>/dev/null
+            ;;
+    esac
+}
+
 # Install a package if not already present
 install_pkg() {
     local pkg_raw="$1"
@@ -66,7 +96,7 @@ install_pkg() {
     pkg_manager="$(detect_pkg_manager)"
 
     for bin in $pkg_mapped; do
-        if has_cmd "$bin" 2>/dev/null || dpkg -l "$bin" &>/dev/null || rpm -q "$bin" &>/dev/null; then
+        if is_pkg_installed "$bin" "$pkg_manager"; then
             log_ok "$bin already installed"
             continue
         fi
@@ -74,25 +104,48 @@ install_pkg() {
         log_info "Installing $bin..."
         case "$pkg_manager" in
             dnf)
-                sudo dnf install -y "$bin"
+                if sudo dnf install -y "$bin"; then
+                    log_ok "$bin installed"
+                else
+                    log_err "Failed to install $bin"
+                    return 1
+                fi
                 ;;
             apt)
                 sudo -v || true
                 sudo apt-get update
-                sudo apt-get install -y "$bin"
+                if sudo apt-get install -y "$bin"; then
+                    log_ok "$bin installed"
+                elif [[ "$bin" == libaio* ]] && apt-cache show libaio1t64 &>/dev/null; then
+                    log_warn "$bin not found in apt cache, trying libaio1t64..."
+                    sudo apt-get install -y libaio1t64
+                    log_ok "libaio1t64 installed"
+                else
+                    log_err "Failed to install $bin"
+                    return 1
+                fi
                 ;;
             pacman)
-                sudo pacman -S --noconfirm "$bin"
+                if sudo pacman -S --noconfirm "$bin"; then
+                    log_ok "$bin installed"
+                else
+                    log_err "Failed to install $bin"
+                    return 1
+                fi
                 ;;
             zypper)
-                sudo zypper install -y "$bin"
+                if sudo zypper install -y "$bin"; then
+                    log_ok "$bin installed"
+                else
+                    log_err "Failed to install $bin"
+                    return 1
+                fi
                 ;;
             *)
                 log_err "Unknown package manager. Please install $bin manually."
                 return 1
                 ;;
         esac
-        log_ok "$bin installed"
     done
 }
 
