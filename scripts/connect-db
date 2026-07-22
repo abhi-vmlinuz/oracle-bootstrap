@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# connect-db — Start Oracle container, wait for readiness, connect via SQL*Plus
+
+set -euo pipefail
+
+# --- Config ---
+readonly CONTAINER_NAME="oracledb"
+readonly CONNECT_STRING="mca/mca@localhost:1521/FREEPDB1"
+readonly MAX_WAIT=60
+readonly POLL_INTERVAL=2
+
+# --- Functions ---
+
+container_running() {
+    [[ "$(podman inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null)" == "true" ]]
+}
+
+container_exists() {
+    podman container exists "$CONTAINER_NAME" 2>/dev/null
+}
+
+start_oracle() {
+    if container_running; then
+        echo "[✓] Oracle container is already running"
+        return 0
+    fi
+
+    if container_exists; then
+        echo "[>] Starting Oracle container..."
+        podman start "$CONTAINER_NAME"
+    else
+        echo "[✗] Oracle container does not exist. Run ./install.sh first."
+        exit 1
+    fi
+}
+
+wait_for_oracle() {
+    echo "[>] Waiting for Oracle to accept connections..."
+    local attempts=0
+    while [[ $attempts -lt $MAX_WAIT ]]; do
+        if podman exec "$CONTAINER_NAME" bash -c "echo 'SELECT 1 FROM DUAL;' | sqlplus -s / as sysdba" 2>/dev/null | grep -q '1'; then
+            echo "[✓] Oracle is ready"
+            return 0
+        fi
+        ((attempts++))
+        sleep "$POLL_INTERVAL"
+        printf "\r[>] Waiting... (%d/%d)" "$attempts" "$MAX_WAIT"
+    done
+    printf "\n"
+    echo "[✗] Oracle did not become ready after ${MAX_WAIT} attempts"
+    exit 1
+}
+
+# --- Main ---
+
+start_oracle
+wait_for_oracle
+
+# Hand over to rlwrap + sqlplus
+exec rlwrap sqlplus "$CONNECT_STRING"

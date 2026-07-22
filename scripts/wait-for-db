@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# wait-for-db — Standalone utility to poll Oracle readiness
+
+set -euo pipefail
+
+readonly CONTAINER_NAME="oracledb"
+readonly MAX_WAIT=60
+readonly POLL_INTERVAL=2
+
+container_running() {
+    [[ "$(podman inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null)" == "true" ]]
+}
+
+if ! container_running; then
+    echo "[✗] Oracle container is not running. Start it first."
+    exit 1
+fi
+
+echo "[>] Waiting for Oracle to accept connections..."
+attempts=0
+while [[ $attempts -lt $MAX_WAIT ]]; do
+    if podman exec "$CONTAINER_NAME" bash -c "echo 'SELECT 1 FROM DUAL;' | sqlplus -s / as sysdba" 2>/dev/null | grep -q '1'; then
+        echo "[✓] Oracle is ready"
+        exit 0
+    fi
+    ((attempts++))
+    sleep "$POLL_INTERVAL"
+    printf "\r[>] Waiting... (%d/%d)" "$attempts" "$MAX_WAIT"
+done
+
+printf "\n"
+echo "[✗] Oracle did not become ready after ${MAX_WAIT} attempts"
+exit 1

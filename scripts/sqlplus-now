@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# sqlplus-now — Connect to Oracle immediately (container must already be running)
+
+set -euo pipefail
+
+readonly CONNECT_STRING="mca/mca@localhost:1521/FREEPDB1"
+
+# Hand over directly to rlwrap + sqlplus, no container checks, no waiting
+exec rlwrap sqlplus "$CONNECT_STRING"
