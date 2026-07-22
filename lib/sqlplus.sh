@@ -6,9 +6,9 @@ set -euo pipefail
 [[ -n "${ORACLE_SQLPLUS_SOURCED:-}" ]] && return 0
 ORACLE_SQLPLUS_SOURCED=1
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__oracle_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
-source "$SCRIPT_DIR/utils.sh"
+source "$__oracle_lib_dir/utils.sh"
 
 readonly CACHE_DIR="${HOME}/.cache/oracle"
 readonly INSTALL_DIR="${HOME}/.local/oracle"

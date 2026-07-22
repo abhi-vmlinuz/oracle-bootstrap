@@ -6,13 +6,13 @@ set -euo pipefail
 [[ -n "${ORACLE_DB_SOURCED:-}" ]] && return 0
 ORACLE_DB_SOURCED=1
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__oracle_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
-source "$SCRIPT_DIR/utils.sh"
+source "$__oracle_lib_dir/utils.sh"
 # shellcheck source=podman.sh
-source "$SCRIPT_DIR/podman.sh"
+source "$__oracle_lib_dir/podman.sh"
 
-readonly INIT_SQL="${SCRIPT_DIR}/../sql/init.sql"
+readonly INIT_SQL="${__oracle_lib_dir}/../sql/init.sql"
 
 # Check if the MCA user exists
 mca_user_exists() {

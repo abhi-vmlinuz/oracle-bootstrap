@@ -6,11 +6,11 @@ set -euo pipefail
 [[ -n "${ORACLE_PACKAGES_SOURCED:-}" ]] && return 0
 ORACLE_PACKAGES_SOURCED=1
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__oracle_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
-source "$SCRIPT_DIR/utils.sh"
+source "$__oracle_lib_dir/utils.sh"
 # shellcheck source=distro.sh
-source "$SCRIPT_DIR/distro.sh"
+source "$__oracle_lib_dir/distro.sh"
 
 # Map of package names per distro
 pkg_map() {

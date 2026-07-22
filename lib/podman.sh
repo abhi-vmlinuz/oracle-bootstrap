@@ -6,9 +6,9 @@ set -euo pipefail
 [[ -n "${ORACLE_PODMAN_SOURCED:-}" ]] && return 0
 ORACLE_PODMAN_SOURCED=1
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__oracle_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
-source "$SCRIPT_DIR/utils.sh"
+source "$__oracle_lib_dir/utils.sh"
 
 readonly ORACLE_IMAGE="container-registry.oracle.com/database/free:latest"
 readonly CONTAINER_NAME="oracledb"

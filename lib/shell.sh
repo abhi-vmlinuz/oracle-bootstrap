@@ -6,11 +6,11 @@ set -euo pipefail
 [[ -n "${ORACLE_SHELL_SOURCED:-}" ]] && return 0
 ORACLE_SHELL_SOURCED=1
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__oracle_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=utils.sh
-source "$SCRIPT_DIR/utils.sh"
+source "$__oracle_lib_dir/utils.sh"
 
-readonly SCRIPTS_DIR="${SCRIPT_DIR}/../scripts"
+readonly SCRIPTS_DIR="${__oracle_lib_dir}/../scripts"
 
 # Install commands into ~/.local/bin
 install_commands() {
@@ -84,7 +84,7 @@ ensure_fish_path() {
 # Setup Oracle environment variables (LD_LIBRARY_PATH, ORACLE_HOME)
 setup_oracle_env() {
     local ic_dir
-    ic_dir="$("${SCRIPT_DIR}/sqlplus.sh" --source-only && instantclient_dir)"
+    ic_dir="$("${__oracle_lib_dir}/sqlplus.sh" --source-only && instantclient_dir)"
 
     if [[ -z "$ic_dir" || ! -d "$ic_dir" ]]; then
         log_warn "Instant Client directory not found, skipping environment setup"
