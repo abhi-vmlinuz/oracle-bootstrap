@@ -26,6 +26,7 @@ wget https://download.oracle.com/otn_software/linux/instantclient/2340000/instan
 if the wget commands returns a 404 head to this [link](https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html) and download:
 - instantclient-basic-linux.x64-23.26.3.0.0.zip
 - instantclient-sqlplus-linux.x64-23.26.3.0.0.zip
+
 move these zip files on the repository folder and run the install script again
 
 
