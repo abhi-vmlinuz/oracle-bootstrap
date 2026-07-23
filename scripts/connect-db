@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # connect-db — Start Oracle container, wait for readiness, connect via SQL*Plus
+#
+# Usage:
+#   connect-db                    # Interactive login
+#   connect-db --from schema.sql  # Run SQL file
 
 set -euo pipefail
 
 # --- Config ---
 readonly CONTAINER_NAME="oracledb"
-readonly CONNECT_STRING="mca/mca@localhost:1521/FREEPDB1"
+readonly DEFAULT_HOST="localhost"
+readonly DEFAULT_PORT="1521"
+readonly DEFAULT_SERVICE="FREEPDB1"
 readonly MAX_WAIT=60
 readonly POLL_INTERVAL=2
 
@@ -22,16 +28,12 @@ _detect_distro_for_hint() {
     fi
 }
 
-# Check for missing shared libraries and auto-fix compat symlinks
 _check_ic_deps() {
     local bin="$1"
     local missing
     missing="$(ldd "$bin" 2>/dev/null | grep 'not found' | awk '{print $1}' || true)"
-    if [[ -z "$missing" ]]; then
-        return 0
-    fi
+    [[ -z "$missing" ]] && return 0
 
-    # Try compat symlinks for known transitions
     local libdir=""
     if [[ -d /usr/lib/x86_64-linux-gnu ]]; then
         libdir="/usr/lib/x86_64-linux-gnu"
@@ -41,7 +43,7 @@ _check_ic_deps() {
         libdir="/lib64"
     fi
 
-    # libaio.so.1 -> libaio.so.1t64 (Debian trixie transition)
+    # Debian Trixie transition: libaio.so.1 -> libaio.so.1t64
     if echo "$missing" | grep -q 'libaio.so.1' && [[ -n "$libdir" ]]; then
         if [[ -f "${libdir}/libaio.so.1t64" && ! -f "${libdir}/libaio.so.1" ]]; then
             echo "[>] Creating libaio compat symlink for Debian trixie..."
@@ -52,18 +54,14 @@ _check_ic_deps() {
         fi
     fi
 
-    # Re-test after symlink fix
+    # Re-test after symlink
     missing="$(ldd "$bin" 2>/dev/null | grep 'not found' | awk '{print $1}' || true)"
-    if [[ -z "$missing" ]]; then
-        return 0
-    fi
+    [[ -z "$missing" ]] && return 0
 
     echo "[✗] Missing shared libraries for sqlplus:"
     printf '    %s\n' "$missing"
     if echo "$missing" | grep -q 'libaio'; then
-        local distro
-        distro="$(_detect_distro_for_hint)"
-        case "$distro" in
+        case "$(_detect_distro_for_hint)" in
             debian|ubuntu|linuxmint|kali)
                 echo "[>] Fix: sudo apt-get install -y libaio1"
                 echo "[>]   On Debian Trixie also try: sudo apt-get install -y libaio1t64"
@@ -89,14 +87,10 @@ _check_ic_deps() {
 _setup_oracle_env() {
     local install_dir="${HOME}/.local/oracle"
     local ic_dir=""
-
-    # Already on PATH?
     if command -v sqlplus &>/dev/null; then
         _oracle_bin="$(command -v sqlplus)"
         return 0
     fi
-
-    # Find extracted instantclient dir
     ic_dir="$(find "$install_dir" -maxdepth 1 -type d -name 'instantclient_*' 2>/dev/null | head -n1)"
     if [[ -n "$ic_dir" && -x "${ic_dir}/sqlplus" ]]; then
         export ORACLE_HOME="$ic_dir"
@@ -105,31 +99,16 @@ _setup_oracle_env() {
         _oracle_bin="${ic_dir}/sqlplus"
         return 0
     fi
-
     echo "[✗] sqlplus not found. Run ./install.sh first."
     exit 1
 }
 
-# --- Container functions ---
-container_running() {
-    [[ "$(podman inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null)" == "true" ]]
-}
-
-container_exists() {
-    podman container exists "$CONTAINER_NAME" 2>/dev/null
-}
-
-start_oracle() {
-    if container_running; then
-        echo "[✓] Oracle container is already running"
-        return 0
-    fi
-
-    if container_exists; then
-        echo "[>] Starting Oracle container..."
-        podman start "$CONTAINER_NAME"
-    else
-        echo "[✗] Oracle container does not exist. Run ./install.sh first."
+_check_oracle_container() {
+    local running
+    running="$(podman inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null)"
+    if [[ "$running" != "true" ]]; then
+        echo "[✗] Oracle container '$CONTAINER_NAME' is not running."
+        echo "[>] Start it with: connect-db"
         exit 1
     fi
 }
@@ -151,11 +130,72 @@ wait_for_oracle() {
     exit 1
 }
 
+# --- Argument parsing ---
+sql_file=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --from)
+            shift
+            if [[ -z "${1:-}" ]]; then
+                echo "[✗] --from requires a file path" >&2
+                exit 1
+            fi
+            sql_file="$1"
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: connect-db [--from <path-to-sql-file>]"
+            exit 0
+            ;;
+        *)
+            echo "[✗] Unknown option: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# --- Container check ---
+if [[ -z "${SKIP_ORACLE_CHECK:-}" ]]; then
+    _check_oracle_container
+fi
+
 # --- Main ---
 _setup_oracle_env
 _check_ic_deps "$_oracle_bin"
-start_oracle
 wait_for_oracle
 
-# Hand over to rlwrap + sqlplus
-exec rlwrap "${_oracle_bin:-sqlplus}" "$CONNECT_STRING"
+# --- Interactive credentials ---
+echo -n "Username [mca]: "
+read user
+user="${user:-mca}"
+
+echo -n "Password [mca]: "
+stty -echo 2>/dev/null || true
+read password
+stty echo 2>/dev/null || true
+echo ""
+password="${password:-mca}"
+
+database="$DEFAULT_HOST:$DEFAULT_PORT/$DEFAULT_SERVICE"
+
+# --- Launch ---
+tmp_script="/tmp/oracle-connect-$$.sql"
+trap 'rm -f "$tmp_script"' EXIT
+{
+    printf "connect %s/%s@%s\n" "$user" "$password" "$database"
+} > "$tmp_script"
+
+if [[ -n "$sql_file" ]]; then
+    if [[ ! -f "$sql_file" ]]; then
+        echo "[✗] SQL file not found: $sql_file" >&2
+        exit 1
+    fi
+    {
+        printf "set pagesize 0 feedback off verify off heading off echo off\n"
+        printf "set define off\n"
+        printf "start %s\n" "$sql_file"
+    } >> "$tmp_script"
+    exec sqlplus -S /NOLOG @"$tmp_script"
+else
+    exec rlwrap sqlplus /NOLOG @"$tmp_script"
+fi
