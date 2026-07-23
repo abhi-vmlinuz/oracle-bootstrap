@@ -104,20 +104,37 @@ _setup_oracle_env() {
 }
 
 _check_oracle_container() {
+    if ! podman container exists "$CONTAINER_NAME" 2>/dev/null; then
+        echo "[✗] Oracle container '$CONTAINER_NAME' does not exist."
+        echo "[>] Please run ./install.sh first to set up the container."
+        exit 1
+    fi
+
     local running
     running="$(podman inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null)"
     if [[ "$running" != "true" ]]; then
-        echo "[✗] Oracle container '$CONTAINER_NAME' is not running."
-        echo "[>] Start it with: connect-db"
-        exit 1
+        echo "[>] Starting Oracle container '$CONTAINER_NAME'..."
+        podman start "$CONTAINER_NAME" >/dev/null
+        echo "[✓] Oracle container started."
     fi
 }
 
 wait_for_oracle() {
     echo "[>] Waiting for Oracle to accept connections..."
     local attempts=0
+    local result
     while [[ $attempts -lt $MAX_WAIT ]]; do
-        if podman exec "$CONTAINER_NAME" bash -c "echo 'SELECT 1 FROM DUAL;' | sqlplus -s / as sysdba" 2>/dev/null | grep -q '1'; then
+        result="$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>&1 <<'EOF'
+WHENEVER SQLERROR EXIT 1;
+WHENEVER OSERROR EXIT 1;
+SET PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF ECHO OFF
+SELECT COUNT(*) FROM v$pdbs WHERE name='FREEPDB1' AND open_mode='READ WRITE';
+EXIT;
+EOF
+)" || true
+
+        if [[ "$(echo "$result" | tr -d '[:space:]')" == "1" ]]; then
+            printf "\n"
             echo "[✓] Oracle is ready"
             return 0
         fi
@@ -166,12 +183,12 @@ wait_for_oracle
 
 # --- Interactive credentials ---
 echo -n "Username [mca]: "
-read user
+read -r user
 user="${user:-mca}"
 
 echo -n "Password [mca]: "
 stty -echo 2>/dev/null || true
-read password
+read -r password
 stty echo 2>/dev/null || true
 echo ""
 password="${password:-mca}"

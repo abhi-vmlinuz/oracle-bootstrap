@@ -15,8 +15,8 @@ readonly INSTALL_DIR="${HOME}/.local/oracle"
 readonly ORACLE_DL_PAGE="https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html"
 
 # Configurable Oracle Instant Client version
-# Override before sourcing: ORACLE_IC_VERSION=23.26.2.0.0
-readonly ORACLE_IC_VERSION="${ORACLE_IC_VERSION:-23.26.2.0.0}"
+# Override before sourcing: ORACLE_IC_VERSION=23.7.0.24.10
+readonly ORACLE_IC_VERSION="${ORACLE_IC_VERSION:-23.7.0.24.10}"
 
 # Direct download URL (Oracle may require authentication; this is a best-effort attempt)
 ic_download_url() {

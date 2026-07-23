@@ -17,14 +17,16 @@ readonly INIT_SQL="${__oracle_lib_dir}/../sql/init.sql"
 # Check if the MCA user exists in FREEPDB1
 mca_user_exists() {
     local result
-    result="$(podman exec -i oracledb sqlplus -s / as sysdba <<'EOF'
+    result="$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>&1 <<'EOF'
+WHENEVER SQLERROR EXIT 1;
+WHENEVER OSERROR EXIT 1;
 SET PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF ECHO OFF
 ALTER SESSION SET CONTAINER = FREEPDB1;
 SELECT COUNT(*) FROM dba_users WHERE username = 'MCA';
 EXIT;
 EOF
-)"
-    [[ "$(echo "$result" | awk '/^[[:space:]]*[0-9]+/ {print $1}' | tail -n1)" == "1" ]] || return 1
+)" || true
+    [[ "$(echo "$result" | tr -d '[:space:]')" == "1" ]]
 }
 
 # Initialize database: create user, grant privileges
@@ -35,25 +37,36 @@ init_database() {
     fi
 
     local attempts=0
-    while [[ $attempts -lt 30 ]]; do
-        local output
-        output=$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>/dev/null <<'EOF'
+    local max_attempts=30
+    local output
+
+    while [[ $attempts -lt $max_attempts ]]; do
+        output="$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>&1 <<'EOF'
+WHENEVER SQLERROR EXIT 1;
+WHENEVER OSERROR EXIT 1;
 SET PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF ECHO OFF
 ALTER SESSION SET CONTAINER = FREEPDB1;
 CREATE USER mca IDENTIFIED BY mca;
 GRANT CONNECT, RESOURCE TO mca;
+GRANT CREATE VIEW, CREATE SYNONYM TO mca;
 ALTER USER mca QUOTA UNLIMITED ON USERS;
 EXIT;
 EOF
-)
-        if echo "$output" | grep -q 'ORA-01920\|ORA-01034\|ORA-12514'; then
-            # User already exists or instance not ready — retry
-            ((attempts++))
-            sleep 2
-            printf "\r[>] Waiting for database init... (%d/30)" "$attempts"
-            continue
+)" || true
+
+        if mca_user_exists; then
+            log_ok "Database initialized (user MCA created)"
+            return 0
         fi
-        break
+
+        if echo "$output" | grep -q 'ORA-01920'; then
+            log_ok "Database user MCA already exists"
+            return 0
+        fi
+
+        ((attempts++))
+        sleep 2
+        printf "\r[>] Waiting for database init... (%d/%d)" "$attempts" "$max_attempts"
     done
     printf "\n"
 

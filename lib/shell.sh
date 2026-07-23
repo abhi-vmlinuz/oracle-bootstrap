@@ -141,7 +141,7 @@ ensure_source_dropin() {
     fi
 
     local source_line
-    source_line="for f in ${dropin_dir}/*.sh; do [[ -r \"\$f\" ]] && source \"\$f\"; done"
+    source_line="for f in ${dropin_dir}/*; do [[ -f \"\$f\" && -r \"\$f\" ]] && source \"\$f\"; done"
 
     # Check if dropin dir is already sourced
     if ! grep -q "$dropin_dir" "$rcfile" 2>/dev/null; then

@@ -99,11 +99,16 @@ _setup_oracle_env() {
 }
 
 _check_oracle_container() {
+    if ! podman container exists oracledb 2>/dev/null; then
+        echo "[✗] Oracle container 'oracledb' does not exist."
+        echo "[>] Run ./install.sh to set up Oracle."
+        exit 1
+    fi
     local running
     running="$(podman inspect -f '{{.State.Running}}' oracledb 2>/dev/null)"
     if [[ "$running" != "true" ]]; then
         echo "[✗] Oracle container 'oracledb' is not running."
-        echo "[>] Start it with: connect-db"
+        echo "[>] Start it and connect using: connect-db"
         exit 1
     fi
 }
@@ -141,12 +146,12 @@ _check_ic_deps "$_oracle_bin"
 
 # --- Interactive credentials ---
 echo -n "Username [mca]: "
-read user
+read -r user
 user="${user:-mca}"
 
 echo -n "Password [mca]: "
 stty -echo 2>/dev/null || true
-read password
+read -r password
 stty echo 2>/dev/null || true
 echo ""
 password="${password:-mca}"
