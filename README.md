@@ -9,8 +9,8 @@ git clone https://github.com/abhi-vmlinuz/oracle-bootstrap.git
 cd oracle-bootstrap
 
 # Download Oracle Instant Client ZIPs
-wget https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-basic-linux.x64-23.7.0.24.10.zip
-wget https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-sqlplus-linux.x64-23.7.0.24.10.zip
+wget https://download.oracle.com/otn_software/linux/instantclient/2340000/instantclient-basic-linux.x64-23.4.0.24.05.zip
+wget https://download.oracle.com/otn_software/linux/instantclient/2340000/instantclient-sqlplus-linux.x64-23.4.0.24.05.zip
 
 # Run installer
 ./install.sh
