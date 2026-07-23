@@ -7,6 +7,12 @@ A one-command installer that sets up a complete Oracle Database development envi
 ```bash
 git clone https://github.com/abhi-vmlinuz/oracle-bootstrap.git
 cd oracle-bootstrap
+
+# Download Oracle Instant Client ZIPs
+wget https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-basic-linux.x64-23.7.0.24.10.zip
+wget https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-sqlplus-linux.x64-23.7.0.24.10.zip
+
+# Run installer
 ./install.sh
 ```
 
@@ -34,36 +40,6 @@ That's it. Oracle container starts, waits until ready, and drops you into SQL*Pl
 - Kali Linux
 - Arch Linux / Manjaro
 - openSUSE
-
-## Prerequisites
-
-- Linux with `sudo` access
-- Internet connection (for Podman + container image)
-- Oracle Instant Client ZIPs placed in `~/.cache/oracle/` (see below)
-
-## Oracle Instant Client
-
-Due to Oracle licensing, automatic download is not always possible.
-If automated download fails, install the Oracle Instant Client manually:
-
-### Option 1: wget (recommended)
-
-```bash
-mkdir -p ~/.cache/oracle
-cd ~/.cache/oracle
-wget https://download.oracle.com/otn_software/linux/instantclient/2326200v2/instantclient-basic-linux.x64-23.26.2.0.0.zip
-wget https://download.oracle.com/otn_software/linux/instantclient/2326200v2/instantclient-sqlplus-linux.x64-23.26.2.0.0.zip
-cd -  # return to oracle-bootstrap directory
-./install.sh
-```
-
-### Option 2: Download manually
-
-1. Download from [Oracle Instant Client Downloads](https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html)
-2. Place these files in `~/.cache/oracle/`:
-   - `instantclient-basic-linux.x64-<version>.zip`
-   - `instantclient-sqlplus-linux.x64-<version>.zip`
-3. Re-run `./install.sh`
 
 ## Project Structure
 
