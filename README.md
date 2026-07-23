@@ -29,6 +29,10 @@ if the wget commands returns a 404 head to this [link](https://www.oracle.com/da
 
 move these zip files on the repository folder and run the install script again
 
+### NOTE 
+if the script exists with message:
+`Waiting for Oracle to be ready...`
+then re-run the ./install script again.
 
 ### Next Step
 Close your current terminal, open a **new terminal window**, and run:
