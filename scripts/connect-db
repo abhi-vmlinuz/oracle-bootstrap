@@ -211,6 +211,7 @@ if [[ -n "$sql_file" ]]; then
         printf "set pagesize 0 feedback off verify off heading off echo off\n"
         printf "set define off\n"
         printf "start %s\n" "$sql_file"
+        printf "exit\n"
     } >> "$tmp_script"
     exec sqlplus -S /NOLOG @"$tmp_script"
 else
