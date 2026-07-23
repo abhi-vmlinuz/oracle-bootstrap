@@ -44,6 +44,20 @@ That's it. Oracle container starts, waits until ready, and drops you into SQL*Pl
 ## Oracle Instant Client
 
 Due to Oracle licensing, automatic download is not always possible.
+If automated download fails, install the Oracle Instant Client manually:
+
+### Option 1: wget (recommended)
+
+```bash
+mkdir -p ~/.cache/oracle
+cd ~/.cache/oracle
+wget https://download.oracle.com/otn_software/linux/instantclient/2326200v2/instantclient-basic-linux.x64-23.26.2.0.0.zip
+wget https://download.oracle.com/otn_software/linux/instantclient/2326200v2/instantclient-sqlplus-linux.x64-23.26.2.0.0.zip
+cd -  # return to oracle-bootstrap directory
+./install.sh
+```
+
+### Option 2: Download manually
 
 1. Download from [Oracle Instant Client Downloads](https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html)
 2. Place these files in `~/.cache/oracle/`:
