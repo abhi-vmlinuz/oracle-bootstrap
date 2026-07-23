@@ -87,21 +87,20 @@ wait_for_oracle() {
     local result
 
     while [[ $attempts -lt $max_attempts ]]; do
-        result="$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>&1 <<'EOF'
+        if result="$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>&1 <<'EOF'
 WHENEVER SQLERROR EXIT 1;
 WHENEVER OSERROR EXIT 1;
 SET PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF ECHO OFF
 SELECT COUNT(*) FROM v$pdbs WHERE name='FREEPDB1' AND open_mode='READ WRITE';
 EXIT;
 EOF
-)" || true
-
-        result="$(echo "$result" | tr -d '[:space:]')"
-
-        if [[ "$result" == "1" ]]; then
-            printf "\n"
-            log_ok "Oracle is ready (PDB FREEPDB1 is open)"
-            return 0
+)"; then
+            result="$(echo "$result" | tr -d '[:space:]')"
+            if [[ "$result" == "1" ]]; then
+                printf "\n"
+                log_ok "Oracle is ready (PDB FREEPDB1 is open)"
+                return 0
+            fi
         fi
         ((attempts++))
         sleep 3

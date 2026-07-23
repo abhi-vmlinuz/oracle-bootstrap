@@ -17,7 +17,7 @@ readonly INIT_SQL="${__oracle_lib_dir}/../sql/init.sql"
 # Check if the MCA user exists in FREEPDB1
 mca_user_exists() {
     local result
-    result="$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>&1 <<'EOF'
+    if result="$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>&1 <<'EOF'
 WHENEVER SQLERROR EXIT 1;
 WHENEVER OSERROR EXIT 1;
 SET PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF ECHO OFF
@@ -25,8 +25,11 @@ ALTER SESSION SET CONTAINER = FREEPDB1;
 SELECT COUNT(*) FROM dba_users WHERE username = 'MCA';
 EXIT;
 EOF
-)" || true
-    [[ "$(echo "$result" | tr -d '[:space:]')" == "1" ]]
+)"; then
+        [[ "$(echo "$result" | tr -d '[:space:]')" == "1" ]]
+    else
+        return 1
+    fi
 }
 
 # Initialize database: create user, grant privileges
@@ -41,7 +44,7 @@ init_database() {
     local output
 
     while [[ $attempts -lt $max_attempts ]]; do
-        output="$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>&1 <<'EOF'
+        if output="$(podman exec -i "$CONTAINER_NAME" sqlplus -s / as sysdba 2>&1 <<'EOF'
 WHENEVER SQLERROR EXIT 1;
 WHENEVER OSERROR EXIT 1;
 SET PAGESIZE 0 FEEDBACK OFF VERIFY OFF HEADING OFF ECHO OFF
@@ -52,16 +55,20 @@ GRANT CREATE VIEW, CREATE SYNONYM TO mca;
 ALTER USER mca QUOTA UNLIMITED ON USERS;
 EXIT;
 EOF
-)" || true
-
-        if mca_user_exists; then
-            log_ok "Database initialized (user MCA created)"
-            return 0
-        fi
-
-        if echo "$output" | grep -q 'ORA-01920'; then
-            log_ok "Database user MCA already exists"
-            return 0
+)"; then
+            if mca_user_exists; then
+                log_ok "Database initialized (user MCA created)"
+                return 0
+            fi
+        else
+            if mca_user_exists; then
+                log_ok "Database initialized (user MCA created)"
+                return 0
+            fi
+            if echo "$output" | grep -q 'ORA-01920'; then
+                log_ok "Database user MCA already exists"
+                return 0
+            fi
         fi
 
         ((attempts++))
