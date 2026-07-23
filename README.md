@@ -22,6 +22,12 @@ wget https://download.oracle.com/otn_software/linux/instantclient/2340000/instan
 # 3. Run the installer (enter your sudo password if prompted for dependencies)
 ./install.sh
 ```
+### NOTE
+if the wget commands returns a 404 head to this [link](https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html) and download:
+- instantclient-basic-linux.x64-23.26.3.0.0.zip
+- instantclient-sqlplus-linux.x64-23.26.3.0.0.zip
+move these zip files on the repository folder and run the install script again
+
 
 ### Next Step
 Close your current terminal, open a **new terminal window**, and run:
@@ -65,28 +71,6 @@ If you are already inside SQL*Plus, you can execute a local SQL file using the `
 ```sql
 SQL> @path/to/your/file.sql
 ```
-
----
-
-##  SQL*Plus Tips for Beginners
-
-Standard SQL*Plus can feel frustrating. Here are a few features built into this bootstrap to make your life easier:
-
-1. **Arrow Keys & Command History (`rlwrap`)**
-   Normally, pressing the Up/Down arrow keys in SQL*Plus prints garbage like `^[[A`. 
-   This installer wraps SQL*Plus in `rlwrap`, allowing you to use **arrow keys** to cycle through your command history and edit commands easily!
-2. **Describing Table Structures**
-   To see table columns and types:
-   ```sql
-   DESCRIBE table_name;
-   -- or simply:
-   desc table_name;
-   ```
-3. **Exiting the Prompt**
-   To return to your terminal shell:
-   ```sql
-   EXIT;
-   ```
 
 ---
 
