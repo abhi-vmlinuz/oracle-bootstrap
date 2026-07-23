@@ -1,4 +1,4 @@
-# 🚀 Oracle Database Development Bootstrapper
+# Oracle Database Development Bootstrapper
 
 A simple, one-command installer to set up a complete Oracle Database development environment on Linux and Windows Subsystem for Linux (WSL).
 
@@ -6,7 +6,7 @@ Designed to get computer science/MCA students up and running with Oracle SQL ins
 
 ---
 
-## ⚡ Quick Start
+##  Quick Start (START FROM HERE) 
 
 Open your terminal and run the following commands:
 
@@ -32,7 +32,7 @@ Press **Enter** at both prompts to log in with the default credentials (`mca` / 
 
 ---
 
-## 🛠️ CLI Commands
+##  CLI Commands
 
 After installation, two global commands will be available in your shell:
 
@@ -43,7 +43,7 @@ After installation, two global commands will be available in your shell:
 
 ---
 
-## 📂 Running and Importing SQL Files
+##  Running and Importing SQL Files
 
 There are two easy ways to run your SQL files (like tables creation or queries):
 
@@ -68,7 +68,7 @@ SQL> @path/to/your/file.sql
 
 ---
 
-## 💡 SQL*Plus Tips for Beginners
+##  SQL*Plus Tips for Beginners
 
 Standard SQL*Plus can feel frustrating. Here are a few features built into this bootstrap to make your life easier:
 
@@ -90,7 +90,7 @@ Standard SQL*Plus can feel frustrating. Here are a few features built into this 
 
 ---
 
-## 🔐 Credentials & Default Database
+## Credentials & Default Database
 
 By default, the database is pre-configured with:
 - **Username:** `mca` (all caps `MCA` internally)
@@ -102,7 +102,7 @@ Simply hit **Enter** when prompted for the username and password to use these de
 
 ---
 
-## 💻 Supported Linux Distributions
+##  Supported Linux Distributions
 
 - Ubuntu / Linux Mint / Pop!_OS
 - Debian / Kali Linux
@@ -112,7 +112,7 @@ Simply hit **Enter** when prompted for the username and password to use these de
 
 ---
 
-## 🔍 Troubleshooting
+##  Troubleshooting
 
 | Problem | Root Cause | Solution |
 |:---|:---|:---|
@@ -123,7 +123,7 @@ Simply hit **Enter** when prompted for the username and password to use these de
 
 ---
 
-## 🗑️ Uninstalling
+##  Uninstalling
 
 If you ever need to clean up and remove the Oracle setup:
 ```bash
@@ -135,5 +135,4 @@ This removes the container, data volume, installed commands, and shell integrati
 ---
 
 ## 📄 License
-
-MIT — feel free to share and modify for your classes!
+MIT feel free to share and modify for your classes!
