@@ -4,7 +4,7 @@
 set -euo pipefail
 
 readonly CONTAINER_NAME="oracledb"
-readonly MAX_WAIT=60
+readonly MAX_WAIT=120
 readonly POLL_INTERVAL=2
 
 container_running() {

@@ -81,8 +81,9 @@ container_sql() {
 # Wait until Oracle is accepting connections
 wait_for_oracle() {
     log_info "Waiting for Oracle to be ready..."
+    log_info "(First-time setup can take 2-4 minutes depending on machine speed)"
     local attempts=0
-    local max_attempts=60
+    local max_attempts=120
     local result
 
     while [[ $attempts -lt $max_attempts ]]; do

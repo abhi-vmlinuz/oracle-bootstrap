@@ -12,7 +12,7 @@ readonly CONTAINER_NAME="oracledb"
 readonly DEFAULT_HOST="localhost"
 readonly DEFAULT_PORT="1521"
 readonly DEFAULT_SERVICE="FREEPDB1"
-readonly MAX_WAIT=60
+readonly MAX_WAIT=120
 readonly POLL_INTERVAL=2
 
 # --- Oracle environment ---
