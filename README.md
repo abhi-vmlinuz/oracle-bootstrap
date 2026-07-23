@@ -1,98 +1,139 @@
-# Oracle Database Development Bootstrapper
+# 🚀 Oracle Database Development Bootstrapper
 
-A one-command installer that sets up a complete Oracle Database development environment on Linux (including WSL).
+A simple, one-command installer to set up a complete Oracle Database development environment on Linux and Windows Subsystem for Linux (WSL).
 
-## Quick Start
+Designed to get computer science/MCA students up and running with Oracle SQL instantly, with zero manual setup headaches.
+
+---
+
+## ⚡ Quick Start
+
+Open your terminal and run the following commands:
 
 ```bash
+# 1. Clone this repository
 git clone https://github.com/abhi-vmlinuz/oracle-bootstrap.git
 cd oracle-bootstrap
 
-# Download Oracle Instant Client ZIPs
+# 2. Download the required Oracle Instant Client files (23c Free)
 wget https://download.oracle.com/otn_software/linux/instantclient/2340000/instantclient-basic-linux.x64-23.4.0.24.05.zip
 wget https://download.oracle.com/otn_software/linux/instantclient/2340000/instantclient-sqlplus-linux.x64-23.4.0.24.05.zip
 
-# Run installer
+# 3. Run the installer (enter your sudo password if prompted for dependencies)
 ./install.sh
 ```
 
-After installation, open a new terminal and run:
-
+### Next Step
+Close your current terminal, open a **new terminal window**, and run:
 ```bash
 connect-db
 ```
+Press **Enter** at both prompts to log in with the default credentials (`mca` / `mca`).
 
-That's it. Oracle container starts, waits until ready, and drops you into SQL*Plus.
+---
 
-## Commands
+## 🛠️ CLI Commands
 
-| Command | Purpose |
-|---------|---------|
-| `connect-db` | Start container if stopped, wait for Oracle, launch SQL*Plus with `rlwrap` |
-| `sqlplus-now` | Launch SQL*Plus instantly (container must already be running) |
+After installation, two global commands will be available in your shell:
 
-## Supported Distributions
+| Command | When to use it | What it does |
+|:---|:---|:---|
+| **`connect-db`** | **First connection of the day** | Starts the Oracle container if stopped, waits for the database to boot, and drops you into SQL*Plus. |
+| **`sqlplus-now`** | **Quick subsequent connections** | Instantly drops you into SQL*Plus (container must already be running). |
 
+---
+
+## 📂 Running and Importing SQL Files
+
+There are two easy ways to run your SQL files (like tables creation or queries):
+
+### Method A: Directly from your terminal (Recommended)
+You can run any `.sql` file directly from your terminal shell using the `--from` flag:
+
+```bash
+# If container is stopped:
+connect-db --from path/to/your/file.sql
+
+# If container is already running (instant execution):
+sqlplus-now --from path/to/your/file.sql
+```
+*Note: This will execute all statements in the file and exit back to your terminal immediately.*
+
+### Method B: From inside the SQL*Plus prompt
+If you are already inside SQL*Plus, you can execute a local SQL file using the `@` symbol:
+
+```sql
+SQL> @path/to/your/file.sql
+```
+
+---
+
+## 💡 SQL*Plus Tips for Beginners
+
+Standard SQL*Plus can feel frustrating. Here are a few features built into this bootstrap to make your life easier:
+
+1. **Arrow Keys & Command History (`rlwrap`)**
+   Normally, pressing the Up/Down arrow keys in SQL*Plus prints garbage like `^[[A`. 
+   This installer wraps SQL*Plus in `rlwrap`, allowing you to use **arrow keys** to cycle through your command history and edit commands easily!
+2. **Describing Table Structures**
+   To see table columns and types:
+   ```sql
+   DESCRIBE table_name;
+   -- or simply:
+   desc table_name;
+   ```
+3. **Exiting the Prompt**
+   To return to your terminal shell:
+   ```sql
+   EXIT;
+   ```
+
+---
+
+## 🔐 Credentials & Default Database
+
+By default, the database is pre-configured with:
+- **Username:** `mca` (all caps `MCA` internally)
+- **Password:** `mca`
+- **Host / Port:** `localhost:1521`
+- **Pluggable Database (PDB):** `FREEPDB1`
+
+Simply hit **Enter** when prompted for the username and password to use these defaults.
+
+---
+
+## 💻 Supported Linux Distributions
+
+- Ubuntu / Linux Mint / Pop!_OS
+- Debian / Kali Linux
 - Fedora
-- Ubuntu
-- Linux Mint
-- Debian
-- Kali Linux
 - Arch Linux / Manjaro
 - openSUSE
 
-## Project Structure
+---
 
-```
-oracle-bootstrap/
-├── install.sh
-├── uninstall.sh
-├── lib/
-│   ├── distro.sh
-│   ├── packages.sh
-│   ├── podman.sh
-│   ├── oracle.sh
-│   ├── sqlplus.sh
-│   ├── shell.sh
-│   └── utils.sh
-├── scripts/
-│   ├── connect-db
-│   ├── sqlplus-now
-│   └── wait-for-db
-├── sql/
-│   └── init.sql
-├── README.md
-└── LICENSE
-```
+## 🔍 Troubleshooting
 
-## Custom Credentials
+| Problem | Root Cause | Solution |
+|:---|:---|:---|
+| **`connect-db: command not found`** | Your current terminal doesn't know about the new commands. | Close your terminal and open a new one, or run `source ~/.bashrc` (or `source ~/.zshrc`). |
+| **Long wait on first startup** | The container is creating initial database files. | The first-time initialization takes 2–4 minutes depending on your disk speed. Please wait for the count to complete. |
+| **`rlwrap` not working** | Package was not installed. | Run your distro package manager to install it (e.g. `sudo apt install rlwrap`). |
+| **Missing shared library (`libaio`)** | Missing distro dependency for SQL*Plus. | Run `./install.sh` again to let the script resolve it, or manually run `sudo apt install libaio1` (or `libaio1t64` on Ubuntu 24.04+). |
 
-By default, connects as `mca/mca@localhost:1521/FREEPDB1`.
+---
 
-To change credentials, edit:
-- `scripts/connect-db`
-- `scripts/sqlplus-now`
-- `sql/init.sql`
+## 🗑️ Uninstalling
 
-Then re-run `./install.sh`.
-
-## Uninstalling
-
+If you ever need to clean up and remove the Oracle setup:
 ```bash
+cd oracle-bootstrap
 ./uninstall.sh
 ```
+This removes the container, data volume, installed commands, and shell integration.
 
-This removes the container, data volume, commands, and shell integration. Optionally removes Instant Client and cached downloads.
+---
 
-## Troubleshooting
+## 📄 License
 
-| Problem | Fix |
-|---------|-----|
-| `command not found: connect-db` | Reload shell: `source ~/.bashrc` or open new terminal |
-| Podman not found | Run `./install.sh` to install it |
-| Container won't start | Check `podman logs oracledb` |
-| SQL*Plus not found | Ensure Oracle Instant Client is in `~/.cache/oracle/` and re-run installer |
-
-## License
-
-MIT — see LICENSE file.
+MIT — feel free to share and modify for your classes!
