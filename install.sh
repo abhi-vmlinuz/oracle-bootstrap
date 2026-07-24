@@ -39,7 +39,7 @@ install_base_deps
 # --- Install Oracle Instant Client ---
 log_info ""
 log_info "Installing Oracle Instant Client..."
-install_instantclient
+
 
 # --- Pull Oracle image ---
 log_info ""
