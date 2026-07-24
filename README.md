@@ -110,6 +110,78 @@ Simply hit **Enter** when prompted for the username and password to use these de
 | **`rlwrap` not working** | Package was not installed. | Run your distro package manager to install it (e.g. `sudo apt install rlwrap`). |
 | **Missing shared library (`libaio`)** | Missing distro dependency for SQL*Plus. | Run `./install.sh` again to let the script resolve it, or manually run `sudo apt install libaio1` (or `libaio1t64` on Ubuntu 24.04+). |
 
+## 🛠️ Manual Installation (Alternative)
+
+If the automated `./install.sh` installer fails on your specific system configuration, you can perform the installation manually by running the following commands:
+
+### Step 1: Install Dependencies
+Open your terminal and install system dependencies:
+```bash
+sudo apt update
+sudo apt install -y unzip rlwrap podman
+
+# If you are on Ubuntu 22.04 or older / Debian:
+sudo apt install -y libaio1
+
+# If you are on Ubuntu 24.04 or newer:
+sudo apt install -y libaio1t64
+```
+
+### Step 2: Extract Oracle Instant Client
+Place the two downloaded ZIP files (`instantclient-basic...` and `instantclient-sqlplus...`) in your current directory, then run:
+```bash
+# Create the target directory
+mkdir -p ~/.local/oracle
+
+# Extract both files
+unzip -o instantclient-basic-linux.x64-*.zip -d ~/.local/oracle
+unzip -o instantclient-sqlplus-linux.x64-*.zip -d ~/.local/oracle
+
+# Make the binaries executable
+chmod +x ~/.local/oracle/instantclient_23_4/*
+```
+
+### Step 3: Configure Environment Variables
+Open your shell configuration file:
+```bash
+nano ~/.bashrc
+```
+Scroll to the very bottom, add these lines, then save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`):
+```bash
+export ORACLE_HOME="$HOME/.local/oracle/instantclient_23_4"
+export PATH="$ORACLE_HOME:$PATH"
+export LD_LIBRARY_PATH="$ORACLE_HOME:$LD_LIBRARY_PATH"
+```
+Reload your configuration:
+```bash
+source ~/.bashrc
+```
+
+### Step 4: Run the Oracle Container
+Start the database container (first-time boot will take 2–4 minutes to initialize):
+```bash
+podman run -d \
+  --name oracledb \
+  -p 1521:1521 \
+  -v oracledb_data:/opt/oracle/oradata \
+  -e ORACLE_PDB="FREEPDB1" \
+  container-registry.oracle.com/database/free:latest
+```
+
+### Step 5: Initialize the User
+Once the container starts, create the default student account:
+```bash
+podman exec -i oracledb sqlplus -s / as sysdba <<'EOF'
+ALTER SESSION SET CONTAINER = FREEPDB1;
+CREATE USER mca IDENTIFIED BY mca;
+GRANT CONNECT, RESOURCE TO mca;
+GRANT CREATE VIEW, CREATE SYNONYM TO mca;
+ALTER USER mca QUOTA UNLIMITED ON USERS;
+EXIT;
+EOF
+```
+You can now connect manually anytime using: `rlwrap sqlplus mca/mca@localhost:1521/FREEPDB1`
+
 ---
 
 ##  Uninstalling
